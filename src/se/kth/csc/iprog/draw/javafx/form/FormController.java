@@ -1,13 +1,14 @@
 package se.kth.csc.iprog.draw.javafx.form;
 
 import java.io.IOException;
-import java.util.Observable;
-import java.util.Observer;
+import java.util.ArrayList;
 
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
-import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -19,18 +20,20 @@ import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-import se.kth.csc.iprog.draw.model.Shape;
-import se.kth.csc.iprog.draw.model.ShapeContainer;
+import javafx.util.Callback;
+import javafx.util.converter.NumberStringConverter;
+import se.kth.csc.iprog.draw.javafx.beanmodel.ShapeBean;
+import se.kth.csc.iprog.draw.javafx.beanmodel.ShapeBeanContainer;
 
 /**
- * The Java FX form controller. Since the view is generated from an FXML file, it cannot implement Observer. Therefore
- * we allow the controller to observe the model, and manipulate the view elements. The controller becomes a mediator
- * between model and view, like in e.g. Model-View-ViewModel. Thus the view only addresses the layout concern, and the
- * controller takes both the data view concern, and the interaction concern.
+ * The Java FX form controller. Since the view is generated from an FXML file, it cannot observe the model. Therefore we
+ * allow the controller to observe the model. As a JavaFX specific, the link to the model is done via binding. The
+ * controller becomes a mediator between model and view, like in e.g. Model-View-ViewModel. Thus the view only addresses
+ * the layout concern, and the controller takes both the data view concern, and the interaction concern.
  * 
  * @author cristi
  */
-public class FormController implements Observer {
+public class FormController {
 
     /**
      * Controller shows the view. We do it in a static method because no controller instance is available before the
@@ -38,7 +41,7 @@ public class FormController implements Observer {
      * 
      * @param model
      */
-    static public void showFormView(ShapeContainer model) {
+    static public void showFormView(ShapeBeanContainer model) {
         FXMLLoader loader = new FXMLLoader(
                 FormController.class.getResource("/se/kth/csc/iprog/draw/javafx/form/FormView.fxml"));
 
@@ -74,19 +77,40 @@ public class FormController implements Observer {
         stage.show();
     }
 
-    private ShapeContainer model;
-
-    private Shape current;
+    private ShapeBean current;
 
     /**
      * subscribe to the model
      * 
      * @param model
      */
-    private void setModel(ShapeContainer model) {
-        this.model = model;
-        model.addObserver(this);
-        update(model, null);
+    private void setModel(ShapeBeanContainer model) {
+        errorLabel.setTextFill(Color.RED);
+        errorLabel.textProperty().bind(Bindings.concat(model.lastErrorProperty(), numberErrorProperty));
+
+        // this makes sure that changes in any element (not just element addition/removal) are reported to list change
+        // listeners such as the ListView
+        list.setItems(FXCollections.<ShapeBean> observableList(new ArrayList<ShapeBean>(),
+            new Callback<ShapeBean, javafx.beans.Observable[]>() {
+                @Override
+                public javafx.beans.Observable[] call(ShapeBean shapeBean) {
+                    return new javafx.beans.Observable[] { shapeBean.xProperty(), shapeBean.yProperty(),
+                            shapeBean.wProperty(), shapeBean.hProperty() };
+                }
+            }));
+
+        // bind the ListView items to the model (and initialize from it)
+        Bindings.bindContentBidirectional(list.getItems(), model.getShapeBeans());
+
+        // initialize null current shape, disable textboxes, etc.
+        setCurrentShape(null);
+
+        list.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<ShapeBean>() {
+            @Override
+            public void changed(ObservableValue<? extends ShapeBean> observable, ShapeBean oldValue, ShapeBean newValue) {
+                setCurrentShape(newValue);
+            }
+        });
     }
 
     /**
@@ -95,11 +119,11 @@ public class FormController implements Observer {
      * @param model
      */
     protected void close() {
-        model.deleteObserver(this);
+        setCurrentShape(null);
     }
 
     @FXML
-    ListView<Shape> list;
+    ListView<ShapeBean> list;
 
     @FXML
     TextField xField;
@@ -119,65 +143,52 @@ public class FormController implements Observer {
     @FXML
     Label errorLabel;
 
+    StringProperty numberErrorProperty = new SimpleStringProperty("");
+
     /**
-     * We can't add a selection listener by FXML so we add it in the FXML-annotated initialize() method
+     * detection of invalid number values, to update the status bar
      */
-    @FXML
-    protected void initialize() {
-        list.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Shape>() {
-            @Override
-            public void changed(ObservableValue<? extends Shape> observable, Shape oldValue, Shape newValue) {
-                setCurrentShape(newValue);
+    NumberStringConverter numberStringConverter = new NumberStringConverter() {
+        @Override
+        public Number fromString(String s) {
+            try {
+                Double.parseDouble(s);
+                numberErrorProperty.setValue("");
+            } catch (Throwable t) {
+                System.out.println(t);
+                numberErrorProperty.setValue(t.getMessage());
             }
-        });
-    }
-
-    /**
-     * handler method delcared in FXML. Instead, we could have added a listener in initialize()
-     * 
-     * @param e
-     */
-    public void handleCoordinateChange(ActionEvent e) {
-        try {
-            model.modifyShape(current, Double.parseDouble(xField.getText()), Double.parseDouble(yField.getText()),
-                Double.parseDouble(wField.getText()), Double.parseDouble(hField.getText()));
-            errorLabel.setText("");
-        } catch (Exception ex) {
-            errorLabel.setTextFill(Color.RED);
-            errorLabel.setText(ex.getMessage());
-
+            return super.fromString(s);
         }
-    }
-
-    /** update,called by the model */
-    @Override
-    public void update(Observable o, Object arg) {
-        Shape savedCurrent = current;
-        // set the items to empty list
-        list.setItems(FXCollections.<Shape> observableArrayList());
-        // set the items to the new list
-        list.setItems(FXCollections.observableArrayList(model.getAllShapes()));
-        setCurrentShape(savedCurrent);
-    }
+    };
 
     /**
-     * Fill the form values, based on the current shape
+     * Bind the form fields with the current shape bean properties
      * 
      * @param newValue
      */
-    void setCurrentShape(Shape newValue) {
+    void setCurrentShape(ShapeBean newValue) {
+        if (current != null) {
+            Bindings.unbindBidirectional(xField.textProperty(), current.xProperty());
+            Bindings.unbindBidirectional(yField.textProperty(), current.yProperty());
+            Bindings.unbindBidirectional(wField.textProperty(), current.wProperty());
+            Bindings.unbindBidirectional(hField.textProperty(), current.hProperty());
+            surfaceField.textProperty().unbind();
+        }
+
         current = newValue;
         if (current != null) {
+            Bindings.bindBidirectional(xField.textProperty(), newValue.xProperty(), numberStringConverter);
+            Bindings.bindBidirectional(yField.textProperty(), newValue.yProperty(), numberStringConverter);
+            Bindings.bindBidirectional(wField.textProperty(), newValue.wProperty(), numberStringConverter);
+            Bindings.bindBidirectional(hField.textProperty(), newValue.hProperty(), numberStringConverter);
+            surfaceField.textProperty().bind(Bindings.convert(newValue.surfaceProperty()));
+
             xField.disableProperty().set(false);
             yField.disableProperty().set(false);
             wField.disableProperty().set(false);
             hField.disableProperty().set(false);
 
-            xField.setText("" + current.getX());
-            yField.setText("" + current.getY());
-            wField.setText("" + current.getW());
-            hField.setText("" + current.getH());
-            surfaceField.setText("" + current.getSurface());
         } else {
             xField.disableProperty().set(true);
             yField.disableProperty().set(true);
