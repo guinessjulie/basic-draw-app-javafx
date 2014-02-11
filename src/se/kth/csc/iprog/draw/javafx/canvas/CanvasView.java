@@ -1,7 +1,12 @@
 package se.kth.csc.iprog.draw.javafx.canvas;
 
-import javafx.beans.binding.Bindings;
-import javafx.beans.binding.NumberBinding;
+import java.util.HashSet;
+import java.util.Set;
+
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
+import javafx.beans.binding.DoubleBinding;
+import javafx.beans.property.DoubleProperty;
 import javafx.collections.ListChangeListener;
 import javafx.scene.Node;
 import javafx.scene.layout.Pane;
@@ -48,18 +53,74 @@ public class CanvasView {
                 */
     }
 
-    protected Node makeNode(ShapeBean shapeBean) {
+    Set<DoubleBinding> bindings = new HashSet<DoubleBinding>();
+
+    DoubleBinding propagateFrom = null;
+
+    boolean propagateDirection = false;
+
+    /**
+     * Bind a property to an expression which may contain properties that depend on it. For example if the model shape x
+     * changes, the ellipse.centerX depends on the shape x. If centerX changes, the model shape x depends on centerX. To
+     * avoid circular binding, we make sure that properties are propagated in a single direction (from model to view or
+     * from view to model)
+     */
+    void weakBind(final DoubleProperty prop, final DoubleBinding expr) {
+
+        // data propagates from model to view if the property to be set is from a JavaFX Shape
+        final boolean modelToView = prop.getBean() != null && prop.getBean() instanceof javafx.scene.shape.Shape;
+
+        // expressions must be hanged in a set, otherwise they will get garbage collected and their listeners will take
+        // no effect!
+        bindings.add(expr);
+
+        // initially the model is populated while the UI nodes are not, so we copy the value
+        if (modelToView)
+            prop.set(expr.doubleValue());
+
+        // then we listen to expression changes and update the property
+        expr.addListener(new InvalidationListener() {
+            @Override
+            public void invalidated(Observable arg0) {
+                // if propagation takes place in the opposite direction, we ignore
+                if (propagateFrom != null && propagateDirection != modelToView)
+                    return;
+
+                if (propagateFrom == null) {
+                    // propagation starts
+                    propagateFrom = expr;
+                    propagateDirection = modelToView;
+                }
+
+                // propagate the change: set the property. This will generate more calls to this listener, all of which
+                // should be ignored as we are only propagating in a single direction
+                prop.set(expr.doubleValue());
+
+                if (propagateFrom == expr)
+                    // we are back to the initial expression, therefore propagation finished
+                    propagateFrom = null;
+            }
+        });
+    }
+
+    /**
+     * create a UI shape out of a model shape. The two objects (beans) will be bound to each other
+     * 
+     * @param shapeBean
+     * @return
+     */
+    protected Node makeNode(final ShapeBean shapeBean) {
 
         if (shapeBean.getShape() instanceof Segment) {
-            Line line = new Line();
+            final Line line = new Line();
             line.startXProperty().bindBidirectional(shapeBean.xProperty());
             line.startYProperty().bindBidirectional(shapeBean.yProperty());
 
-            line.endXProperty().bind(Bindings.add(line.startXProperty(), shapeBean.wProperty()));
-            line.endYProperty().bind(Bindings.add(line.startYProperty(), shapeBean.hProperty()));
+            weakBind(line.endXProperty(), shapeBean.xProperty().add(shapeBean.wProperty()));
+            weakBind(line.endYProperty(), shapeBean.yProperty().add(shapeBean.hProperty()));
 
-            // shapeBean.wProperty().bind(Bindings.subtract(line.endXProperty(), shapeBean.xProperty()));
-            // shapeBean.hProperty().bind(Bindings.subtract(line.endYProperty(), shapeBean.yProperty()));
+            weakBind(shapeBean.wProperty(), line.endXProperty().subtract(line.startXProperty()));
+            weakBind(shapeBean.hProperty(), line.endYProperty().subtract(line.startYProperty()));
 
             style(line);
             return line;
@@ -73,24 +134,19 @@ public class CanvasView {
             style(rect);
             return rect;
         } else if (shapeBean.getShape() instanceof Ellipse) {
-            javafx.scene.shape.Ellipse ellipse = new javafx.scene.shape.Ellipse();
+            final javafx.scene.shape.Ellipse ellipse = new javafx.scene.shape.Ellipse();
 
-            NumberBinding halfShapeW = Bindings.divide(shapeBean.wProperty(), 2);
-            // NumberBinding doubleXRadius = Bindings.multiply(ellipse.radiusXProperty(), 2);
-            NumberBinding halfShapeH = Bindings.divide(shapeBean.hProperty(), 2);
-            // NumberBinding doubleYRadius = Bindings.multiply(ellipse.radiusYProperty(), 2);
+            weakBind(ellipse.centerXProperty(), shapeBean.xProperty().add(shapeBean.wProperty().divide(2)));
+            weakBind(ellipse.centerYProperty(), shapeBean.yProperty().add(shapeBean.hProperty().divide(2)));
 
-            ellipse.centerXProperty().bind(Bindings.add(shapeBean.xProperty(), halfShapeW));
-            // shapeBean.xProperty().bind(Bindings.subtract(ellipse.centerXProperty(), doubleXRadius));
+            weakBind(shapeBean.xProperty(), ellipse.centerXProperty().subtract(ellipse.radiusXProperty()));
+            weakBind(shapeBean.yProperty(), ellipse.centerYProperty().subtract(ellipse.radiusYProperty()));
 
-            ellipse.centerYProperty().bind(Bindings.add(shapeBean.yProperty(), halfShapeH));
-            // shapeBean.yProperty().bind(Bindings.subtract(ellipse.centerYProperty(), doubleYRadius));
+            weakBind(ellipse.radiusXProperty(), shapeBean.wProperty().divide(2));
+            weakBind(ellipse.radiusYProperty(), shapeBean.hProperty().divide(2));
 
-            ellipse.radiusXProperty().bind(halfShapeW);
-            // shapeBean.wProperty().bind(doubleXRadius);
-
-            ellipse.radiusYProperty().bind(halfShapeH);
-            // shapeBean.hProperty().bind(doubleYRadius);
+            weakBind(shapeBean.wProperty(), ellipse.radiusXProperty().multiply(2));
+            weakBind(shapeBean.hProperty(), ellipse.radiusYProperty().multiply(2));
 
             style(ellipse);
             return ellipse;

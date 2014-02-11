@@ -10,15 +10,15 @@ public class ShapeBean {
 
     private final Shape shape;
 
-    final DoubleProperty x = new SimpleDoubleProperty();
+    final DoubleProperty x = new SimpleDoubleProperty(this, "x");
 
-    final DoubleProperty y = new SimpleDoubleProperty();
+    final DoubleProperty y = new SimpleDoubleProperty(this, "y");
 
-    final DoubleProperty w = new SimpleDoubleProperty();
+    final DoubleProperty w = new SimpleDoubleProperty(this, "w");
 
-    final DoubleProperty h = new SimpleDoubleProperty();
+    final DoubleProperty h = new SimpleDoubleProperty(this, "h");
 
-    final DoubleProperty surface = new SimpleDoubleProperty();
+    final DoubleProperty surface = new SimpleDoubleProperty(this, "surface");
 
     public DoubleProperty xProperty() {
         return x;
