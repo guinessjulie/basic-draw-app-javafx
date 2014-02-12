@@ -49,6 +49,9 @@ public class CanvasController {
         stage.show();
     }
 
+    /**
+     * links to the FXML file
+     */
     @FXML
     Pane canvas;
 
@@ -63,6 +66,7 @@ public class CanvasController {
 
     /** Read the model and bind it to the canvas children (shape) list */
     void setModel(final ShapeBeanContainer model) {
+
         shapeDrawingController = new ShapeDrawingController(model, canvas, shapeChooser);
 
         // read the current shapes and add them to the view
@@ -140,5 +144,4 @@ public class CanvasController {
 
         return ret;
     }
-
 }

@@ -29,6 +29,8 @@ public class Main extends Application {
         // show a canvas view
         CanvasController.showCanvasView(model);
 
+        // and another one...
+        CanvasController.showCanvasView(model);
     }
 
     public static void main(String[] args) {

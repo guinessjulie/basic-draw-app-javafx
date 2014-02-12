@@ -14,12 +14,20 @@ import javafx.scene.shape.Shape;
  * @author cristi
  */
 public class SelectionController {
+
+    /**
+     * drag start point in relation to the shape
+     */
     double dX, dY;
 
+    /**
+     * original shape position, for moving back in case of escape
+     */
     double startX, startY;
 
-    boolean dragCancelled;
-
+    /**
+     * the dragged shape, null if none
+     */
     Shape dragged;
 
     /**
@@ -32,9 +40,6 @@ public class SelectionController {
         // this should be in the stylesheet but it doesn't seem to take effect
         s.setStyle("-fx-fill:null;-fx-stroke:black;-fx-stroke-width:3");
 
-        // make sure there will be mouse events on the shape bounds
-        s.setPickOnBounds(true);
-
         s.addEventHandler(MouseEvent.ANY, shapeDragging);
         s.setOnKeyPressed(keyHandler);
     }
@@ -45,8 +50,10 @@ public class SelectionController {
 
         @Override
         public void handle(MouseEvent mouseEvent) {
-            dragged = (Shape) mouseEvent.getSource();
+            Shape shape = (Shape) mouseEvent.getSource();
+
             if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_PRESSED)) {
+                dragged = shape;
                 // distances between the drag point and the initial location
                 dX = dragged.getLayoutX() - mouseEvent.getSceneX();
                 dY = dragged.getLayoutY() - mouseEvent.getSceneY();
@@ -59,23 +66,26 @@ public class SelectionController {
 
                 // consume the event so it doesn't go to the Canvas to provoke drawing a new shape
                 mouseEvent.consume();
-                dragCancelled = false;
 
             } else if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_RELEASED)) {
+                if (dragged == null)
+                    return;
                 dragged.setCursor(Cursor.HAND);
                 mouseEvent.consume();
 
             } else if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_DRAGGED)) {
-                if (dragCancelled)
+                if (dragged == null)
                     return;
 
                 // move the shape, this will change the model!!!
                 dragged.setLayoutX(mouseEvent.getSceneX() + dX);
                 dragged.setLayoutY(mouseEvent.getSceneY() + dY);
+                dragged.setCursor(Cursor.MOVE);
+
                 mouseEvent.consume();
 
             } else if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_ENTERED)) {
-                dragged.setCursor(Cursor.HAND);
+                shape.setCursor(Cursor.HAND);
                 mouseEvent.consume();
             }
         }
@@ -89,12 +99,12 @@ public class SelectionController {
                 if (dragged == null)
                     return;
                 key.consume();
-                dragCancelled = true;
 
                 // move the shape back to the original location
                 dragged.layoutXProperty().set(startX);
                 dragged.layoutYProperty().set(startY);
-                dragged.setCursor(Cursor.MOVE);
+                dragged.setCursor(Cursor.HAND);
+                dragged = null;
             }
         }
     };

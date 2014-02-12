@@ -11,13 +11,37 @@ import se.kth.csc.iprog.draw.javafx.beanmodel.ShapeBean;
 import se.kth.csc.iprog.draw.javafx.beanmodel.ShapeBeanContainer;
 import se.kth.csc.iprog.draw.model.ShapeContainer;
 
+/**
+ * Shape drawing controller in Java FX. Adds and edits shapes in the model, based on mouse events.
+ * 
+ * @author cristi
+ */
 public class ShapeDrawingController {
+    // the canvas holding the shapes
     private final Pane canvas;
 
+    // the shape type chooser
     private final ToggleGroup shapeChooser;
 
+    // model
     private final ShapeBeanContainer model;
 
+    // shape currently being created or modified
+    ShapeBean created;
+
+    // shape creation cancelled
+    boolean cancelled;
+
+    // starting point shape creation
+    double dragX, dragY;
+
+    /**
+     * subscribe to canvas mouse and key events.
+     * 
+     * @param m
+     * @param canvas
+     * @param selector
+     */
     public ShapeDrawingController(ShapeBeanContainer m, Pane canvas, ToggleGroup selector) {
         this.model = m;
         this.canvas = canvas;
@@ -27,6 +51,7 @@ public class ShapeDrawingController {
 
         canvas.addEventHandler(MouseEvent.ANY, mouseHandler);
 
+        // classic way of subscribing to an event in java fx
         canvas.setOnKeyPressed(new EventHandler<KeyEvent>() {
 
             @Override
@@ -43,12 +68,9 @@ public class ShapeDrawingController {
 
     }
 
-    boolean cancelled;
-
-    ShapeBean created;
-
-    double dragX, dragY;
-
+    /**
+     * mouse interaction.
+     */
     EventHandler<MouseEvent> mouseHandler = new EventHandler<MouseEvent>() {
 
         @Override
@@ -74,6 +96,11 @@ public class ShapeDrawingController {
 
     };
 
+    /**
+     * find the shape type based on the shape chooser state
+     * 
+     * @return
+     */
     private int getShapeType() {
         switch (shapeChooser.getSelectedToggle().getUserData().toString()) {
             case "segment":
