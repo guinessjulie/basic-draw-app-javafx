@@ -42,8 +42,7 @@ public class FormController {
      * @param model
      */
     static public void showFormView(ShapeBeanContainer model) {
-        FXMLLoader loader = new FXMLLoader(
-                FormController.class.getResource("/se/kth/csc/iprog/draw/javafx/form/FormView.fxml"));
+        FXMLLoader loader = new FXMLLoader(FormController.class.getResource("FormView.fxml"));
 
         // load the FXML
         Parent root = null;
@@ -54,14 +53,14 @@ public class FormController {
         }
 
         // passing the model parameter to the controller
-        // see http://stackoverflow.com/questions/14187963/passing-parameters-javafx-fxml
+        // see http://stackoverflow.com/quest ions/14187963/passing-parameters-javafx-fxml
         final FormController controller = loader.<FormController> getController();
         controller.setModel(model);
 
         // make a window (Stage)
         Stage stage = new Stage();
         stage.setTitle("form");
-        stage.setScene(new Scene(root, 400, 275));
+        stage.setScene(new Scene(root));
 
         // example using a stylesheet
         // scene.getStylesheets().add(FormController.getResource("application.css").toExternalForm());
@@ -75,6 +74,7 @@ public class FormController {
         });
         // show the window
         stage.show();
+        stage.setX(Math.random() * 1000);
     }
 
     private ShapeBean current;

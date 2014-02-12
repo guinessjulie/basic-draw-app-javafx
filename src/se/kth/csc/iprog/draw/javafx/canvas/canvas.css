@@ -1,0 +1,5 @@
+.root {
+    -fx-fill:green;
+    -fx-stroke-width:3 ;
+    -fx-stroke:RED;
+}

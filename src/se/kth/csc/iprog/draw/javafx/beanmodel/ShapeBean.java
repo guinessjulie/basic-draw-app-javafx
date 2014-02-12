@@ -6,6 +6,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import se.kth.csc.iprog.draw.model.Shape;
 
+/** Wrapper that transforms a shape into a JavaFX bean */
 public class ShapeBean {
 
     private final Shape shape;

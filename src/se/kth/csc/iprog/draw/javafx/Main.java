@@ -27,7 +27,7 @@ public class Main extends Application {
         FormController.showFormView(model);
 
         // show a canvas view
-        new CanvasController(model);
+        CanvasController.showCanvasView(model);
 
     }
 

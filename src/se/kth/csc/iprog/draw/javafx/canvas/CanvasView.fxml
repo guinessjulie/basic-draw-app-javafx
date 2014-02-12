@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 
+<?import java.lang.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.textfield.*?>
+<?import javafx.geometry.*?>
+<?import java.net.*?>
+ 
+<BorderPane fx:controller="se.kth.csc.iprog.draw.javafx.canvas.CanvasController" xmlns:fx="http://javafx.com/fxml"
+    prefHeight="200" prefWidth="250" styleClass="root">
+
+    <center>
+     <Pane fx:id="canvas"/>
+    </center>
+    <top>
+    <fx:define>
+        <ToggleGroup fx:id="shapeChooser"/>
+    </fx:define>
+
+    <HBox>
+	    <ToggleButton text="segment" userData="segment" toggleGroup="$shapeChooser"/>
+	    <ToggleButton text="rectangle" userData="rectangle"  toggleGroup="$shapeChooser"/>
+	    <ToggleButton text="ellipse" userData="ellipse"  toggleGroup="$shapeChooser" />
+    </HBox>
+    </top>
+
+       <stylesheets>
+    		<URL value="@canvas.css" />
+ 		 </stylesheets>
+ 
+</BorderPane>

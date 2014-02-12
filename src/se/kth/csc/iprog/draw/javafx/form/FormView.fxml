@@ -7,12 +7,13 @@
 <?import javafx.scene.text.*?>
 <?import javafx.scene.textfield.*?>
 <?import javafx.geometry.*?>
+<?import java.net.*?>
  
 <BorderPane fx:controller="se.kth.csc.iprog.draw.javafx.form.FormController" xmlns:fx="http://javafx.com/fxml"
-    prefHeight="200" prefWidth="320">
+    prefHeight="200" prefWidth="520">
          
     <center>
-     <ListView fx:id="list" />
+     <ListView fx:id="list"/>
 
     </center>
     <right>
@@ -56,5 +57,4 @@
     <bottom>
         <Label id="errorLabel" fx:id="errorLabel"/>
     </bottom>
- 
 </BorderPane>
