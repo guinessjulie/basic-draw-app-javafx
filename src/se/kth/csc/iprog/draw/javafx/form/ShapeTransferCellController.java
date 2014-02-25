@@ -1,9 +1,9 @@
 package se.kth.csc.iprog.draw.javafx.form;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -44,7 +44,7 @@ public class ShapeTransferCellController {
                 Shape shape = dragged.getShape();
                 try {
                     File shapeFile = File.createTempFile("/tmp/" + shape.getType(), ".properties");
-                    FileOutputStream out = new FileOutputStream(shapeFile);
+                    FileWriter out = new FileWriter(shapeFile);
                     shape.writeTo(out);
                     out.close();
                     content.putFiles(Arrays.asList(shapeFile));
@@ -104,7 +104,7 @@ public class ShapeTransferCellController {
                     // for each file, add the shape to the model
                     for (File f : db.getFiles()) {
                         try {
-                            FileInputStream in = new FileInputStream(f);
+                            FileReader in = new FileReader(f);
                             model.addShapeBean(Shape.readFrom(in), index++);
                             in.close();
                         } catch (FileNotFoundException e) {
