@@ -78,12 +78,13 @@ public class CanvasController {
         model.getShapeBeans().addListener(new ListChangeListener<ShapeBean>() {
             @Override
             public void onChanged(Change<? extends ShapeBean> chg) {
-                chg.next();
-                if (chg.wasAdded()) {
-                    canvas.getChildren().add(makeNode(model.getShapeBeans().get(chg.getFrom())));
-                }
-                if (chg.wasRemoved()) {
-                    canvas.getChildren().remove(chg.getFrom());
+                while (chg.next()) {
+                    if (chg.wasAdded()) {
+                        canvas.getChildren().add(chg.getFrom(), makeNode(model.getShapeBeans().get(chg.getFrom())));
+                    }
+                    if (chg.wasRemoved()) {
+                        canvas.getChildren().remove(chg.getFrom());
+                    }
                 }
             }
         });

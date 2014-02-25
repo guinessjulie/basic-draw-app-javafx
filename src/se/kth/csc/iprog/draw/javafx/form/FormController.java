@@ -15,6 +15,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
@@ -84,7 +85,7 @@ public class FormController {
      * 
      * @param model
      */
-    private void setModel(ShapeBeanContainer model) {
+    private void setModel(final ShapeBeanContainer model) {
         errorLabel.setTextFill(Color.RED);
         errorLabel.textProperty().bind(Bindings.concat(model.lastErrorProperty(), numberErrorProperty));
 
@@ -105,12 +106,24 @@ public class FormController {
         // initialize null current shape, disable textboxes, etc.
         setCurrentShape(null);
 
+        // listener to detect change of current shape
         list.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<ShapeBean>() {
             @Override
             public void changed(ObservableValue<? extends ShapeBean> observable, ShapeBean oldValue, ShapeBean newValue) {
                 setCurrentShape(newValue);
             }
         });
+
+        // cell factory to make a LabelCell for each list item and to add a transfer controller to it
+        list.setCellFactory(new Callback<ListView<ShapeBean>, ListCell<ShapeBean>>() {
+            @Override
+            public ListCell<ShapeBean> call(ListView<ShapeBean> param) {
+                LabelCell<ShapeBean> lc = new LabelCell<ShapeBean>();
+                new ShapeTransferCellController(model, lc);
+                return lc;
+            }
+        });
+
     }
 
     /**

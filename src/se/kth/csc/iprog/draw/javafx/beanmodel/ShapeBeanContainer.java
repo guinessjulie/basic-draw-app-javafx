@@ -21,9 +21,13 @@ public class ShapeBeanContainer extends ShapeContainer {
     StringProperty lastError = new SimpleStringProperty("");
 
     public ShapeBean addShapeBean(int type, double x, double y, double w, double h) throws IllegalArgumentException {
-        Shape s = super.addShape(type, x, y, w, h);
+        return addShapeBean(Shape.createShape(type, x, y, w, h), shapeBeans.size());
+    }
+
+    public ShapeBean addShapeBean(Shape s, int index) {
+        super.addShape(s, index);
         ShapeBean sBean = new ShapeBean(s, this);
-        shapeBeans.add(sBean);
+        shapeBeans.add(index, sBean);
         return sBean;
     }
 
