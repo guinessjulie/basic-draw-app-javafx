@@ -45,7 +45,7 @@ public class ShapeTransferCellController {
 
                 Shape shape = dragged.getShape();
                 try {
-                    File shapeFile = File.createTempFile("/tmp/" + shape.getType(), ".properties");
+                    File shapeFile = File.createTempFile(shape.getType(), ".properties");
                     FileWriter out = new FileWriter(shapeFile);
                     shape.writeTo(out);
                     out.close();
