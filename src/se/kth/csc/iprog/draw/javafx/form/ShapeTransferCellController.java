@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.Arrays;
 
 import javafx.event.EventHandler;
@@ -49,6 +51,9 @@ public class ShapeTransferCellController {
                     out.close();
                     content.putFiles(Arrays.asList(shapeFile));
 
+                    StringWriter sout = new StringWriter();
+                    shape.writeTo(sout);
+                    content.putString(sout.toString());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -89,17 +94,18 @@ public class ShapeTransferCellController {
         cell.setOnDragDropped(new EventHandler<DragEvent>() {
             @Override
             public void handle(DragEvent event) {
+
+                // calculate drop location: the index of the cell, maximum the current size
+                int index = cell.getIndex();
+
+                // below the last item, there may be empty cells
+                if (index > model.getAllShapes().size())
+                    index = model.getAllShapes().size();
+
                 Dragboard db = event.getDragboard();
+
                 boolean success = false;
                 if (db.hasFiles()) {
-                    success = true;
-
-                    // calculate drop location: the index of the cell, maximum the current size
-                    int index = cell.getIndex();
-
-                    // below the last item, there may be empty cells
-                    if (index > model.getAllShapes().size())
-                        index = model.getAllShapes().size();
 
                     // for each file, add the shape to the model
                     for (File f : db.getFiles()) {
@@ -107,11 +113,21 @@ public class ShapeTransferCellController {
                             FileReader in = new FileReader(f);
                             model.addShapeBean(Shape.readFrom(in), index++);
                             in.close();
+                            success = true;
                         } catch (FileNotFoundException e) {
                             e.printStackTrace();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
+                    }
+                }
+
+                else if (db.hasString()) {
+                    try {
+                        model.addShapeBean(Shape.readFrom(new StringReader(db.getString())), index);
+                        success = true;
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
                 // drop completed
