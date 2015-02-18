@@ -31,6 +31,11 @@ public class SelectionController {
     Shape dragged;
 
     /**
+     * true if escape was pressed during dragging
+     */
+    boolean dragCancelled;
+
+    /**
      * add this controller to a JavaFX Shape
      * 
      * @param s
@@ -54,6 +59,7 @@ public class SelectionController {
 
             if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_PRESSED)) {
                 dragged = shape;
+                dragCancelled = false;
                 // distances between the drag point and the initial location
                 dX = dragged.getLayoutX() - mouseEvent.getSceneX();
                 dY = dragged.getLayoutY() - mouseEvent.getSceneY();
@@ -72,16 +78,18 @@ public class SelectionController {
                     return;
                 dragged.setCursor(Cursor.HAND);
                 mouseEvent.consume();
-
+                dragged = null;
             } else if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_DRAGGED)) {
                 if (dragged == null)
                     return;
 
-                // move the shape, this will change the model!!!
-                dragged.setLayoutX(mouseEvent.getSceneX() + dX);
-                dragged.setLayoutY(mouseEvent.getSceneY() + dY);
-                dragged.setCursor(Cursor.MOVE);
-
+                if (!dragCancelled) {
+                    // move the shape, this will change the model!!!
+                    dragged.setLayoutX(mouseEvent.getSceneX() + dX);
+                    dragged.setLayoutY(mouseEvent.getSceneY() + dY);
+                    dragged.setCursor(Cursor.MOVE);
+                } else
+                    dragged.setCursor(Cursor.HAND);
                 mouseEvent.consume();
 
             } else if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_ENTERED)) {
@@ -96,7 +104,7 @@ public class SelectionController {
         @Override
         public void handle(KeyEvent key) {
             if (key.getCode().equals(KeyCode.ESCAPE)) {
-                if (dragged == null)
+                if (dragged == null || dragCancelled)
                     return;
                 key.consume();
 
@@ -104,7 +112,7 @@ public class SelectionController {
                 dragged.layoutXProperty().set(startX);
                 dragged.layoutYProperty().set(startY);
                 dragged.setCursor(Cursor.HAND);
-                dragged = null;
+                dragCancelled = true;
             }
         }
     };
