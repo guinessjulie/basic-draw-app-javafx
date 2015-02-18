@@ -82,7 +82,6 @@ public class ShapeDrawingController {
                 canvas.requestFocus();
                 cancelled = false;
             } else if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_RELEASED)) {
-                cancelled = true;
                 created = null;
             } else if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_DRAGGED)) {
                 if (cancelled)
